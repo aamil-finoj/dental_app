@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { CalendarDays, ListChecks, LogOut, Plus, Settings, Users } from "lucide-react";
 import { Greeting } from "@/components/greeting";
@@ -18,6 +18,7 @@ import { deriveSpecialists } from "@/lib/specialists";
 import type { Appointment } from "@/types/appointment";
 import type { PatientRecord } from "@/types/patient";
 import { DEFAULT_TEMPLATES, type MessageTemplates } from "@/types/template";
+import { fetchServerData, pushServerData } from "@/lib/sync-client";
 import { cn } from "@/lib/utils";
 
 const APPOINTMENTS_KEY = "dental-app:appointments";
@@ -78,19 +79,52 @@ export function AppShell() {
 
   const specialists = useMemo(() => deriveSpecialists(appointments), [appointments]);
 
+  useEffect(() => {
+    if (!session?.user?.email) return;
+
+    let cancelled = false;
+
+    fetchServerData().then((serverData) => {
+      if (cancelled) return;
+
+      if (serverData) {
+        setAppointments(serverData.appointments);
+        setPatientRecords(serverData.patientRecords);
+        setTemplates(serverData.templates);
+        window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(serverData.appointments));
+        window.localStorage.setItem(PATIENTS_KEY, JSON.stringify(serverData.patientRecords));
+        window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(serverData.templates));
+      } else {
+        // No data saved for this account yet (or server storage isn't configured) —
+        // seed the server with whatever's already on this device.
+        void pushServerData({ appointments, patientRecords, templates });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // Only re-run when the signed-in account changes — this is a one-time
+    // hydrate-or-seed on login, not a live subscription to local state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.email]);
+
   function persistAppointments(next: Appointment[]) {
     setAppointments(next);
     window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(next));
+    void pushServerData({ appointments: next, patientRecords, templates });
   }
 
   function persistPatients(next: PatientRecord[]) {
     setPatientRecords(next);
     window.localStorage.setItem(PATIENTS_KEY, JSON.stringify(next));
+    void pushServerData({ appointments, patientRecords: next, templates });
   }
 
   function persistTemplates(next: MessageTemplates) {
     setTemplates(next);
     window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(next));
+    void pushServerData({ appointments, patientRecords, templates: next });
   }
 
   function updateAppointment(id: string, patch: Partial<Appointment>) {
