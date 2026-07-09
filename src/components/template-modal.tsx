@@ -19,11 +19,13 @@ export function TemplateModal({
   onOpenChange,
   templates,
   onSave,
+  onClearData,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   templates: MessageTemplates;
   onSave: (templates: MessageTemplates) => void;
+  onClearData: () => void;
 }) {
   const [patientTemplate, setPatientTemplate] = useState(templates.patientTemplate);
   const [specialistTemplate, setSpecialistTemplate] = useState(
@@ -41,11 +43,23 @@ export function TemplateModal({
     setSpecialistTemplate(DEFAULT_TEMPLATES.specialistTemplate);
   }
 
+  function handleClearData() {
+    if (
+      !window.confirm(
+        "Delete all appointments and patients? This can't be undone, and clears data on every signed-in device."
+      )
+    ) {
+      return;
+    }
+    onClearData();
+    onOpenChange(false);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Message Templates</DialogTitle>
+          <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
             Customize the WhatsApp reminder messages sent to patients and
             specialists.
@@ -101,6 +115,19 @@ export function TemplateModal({
             Reset to default
           </button>
         </form>
+
+        <div className="mt-5 border-t border-border pt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">
+            Danger zone
+          </p>
+          <button
+            type="button"
+            onClick={handleClearData}
+            className="mt-2 w-full rounded-full border border-rose-500/40 py-2.5 text-sm font-medium text-rose-500 transition-transform active:scale-95"
+          >
+            Clear all appointments &amp; patients
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

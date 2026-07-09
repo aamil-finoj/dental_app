@@ -11,7 +11,6 @@ import { PatientDirectory } from "@/components/patient-directory";
 import { AppointmentModal } from "@/components/appointment-modal";
 import { PatientModal } from "@/components/patient-modal";
 import { TemplateModal } from "@/components/template-modal";
-import { mockAppointments } from "@/data/appointments";
 import { getNextAvailableSlot } from "@/lib/next-slot";
 import { derivePatients } from "@/lib/patients";
 import { deriveSpecialists } from "@/lib/specialists";
@@ -28,9 +27,9 @@ const TEMPLATES_KEY = "dental-app:templates";
 function loadAppointments(): Appointment[] {
   try {
     const raw = window.localStorage.getItem(APPOINTMENTS_KEY);
-    return raw ? (JSON.parse(raw) as Appointment[]) : mockAppointments;
+    return raw ? (JSON.parse(raw) as Appointment[]) : [];
   } catch {
-    return mockAppointments;
+    return [];
   }
 }
 
@@ -163,6 +162,11 @@ export function AppShell() {
     persistPatients([...patientRecords, patient]);
   }
 
+  function handleClearData() {
+    persistAppointments([]);
+    persistPatients([]);
+  }
+
   function handleAddClick() {
     if (tab === "patients") {
       setPatientModalOpen(true);
@@ -289,6 +293,7 @@ export function AppShell() {
         onOpenChange={setTemplateModalOpen}
         templates={templates}
         onSave={persistTemplates}
+        onClearData={handleClearData}
       />
     </main>
   );
