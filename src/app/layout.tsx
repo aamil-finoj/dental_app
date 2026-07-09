@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NatureBackground } from "@/components/nature-background";
 import { RegisterServiceWorker } from "@/components/register-service-worker";
+import { SessionProvider } from "@/components/session-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -53,9 +54,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NatureBackground />
-          <RegisterServiceWorker />
-          {children}
+          <SessionProvider>
+            <NatureBackground />
+            <RegisterServiceWorker />
+            {children}
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

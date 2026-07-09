@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, ListChecks, Plus, Users } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { CalendarDays, ListChecks, LogOut, Plus, Users } from "lucide-react";
 import { Greeting } from "@/components/greeting";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { DailyAgenda } from "@/components/daily-agenda";
@@ -47,6 +48,7 @@ const TABS: { id: Tab; label: string; icon: typeof ListChecks }[] = [
 ];
 
 export function AppShell() {
+  const { data: session } = useSession();
   const [appointments, setAppointments] = useState<Appointment[]>(loadAppointments);
   const [patientRecords, setPatientRecords] = useState<PatientRecord[]>(loadPatients);
   const [tab, setTab] = useState<Tab>("agenda");
@@ -116,11 +118,32 @@ export function AppShell() {
     }
   }
 
+  const firstName = session?.user?.name?.split(" ")[0];
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 pb-24 pt-6 sm:max-w-3xl">
       <header className="flex items-start justify-between">
-        <Greeting />
-        <ThemeToggle />
+        <Greeting name={firstName} />
+        <div className="flex items-center gap-2">
+          {session?.user?.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={session.user.image}
+              alt={session.user.name ?? "Profile"}
+              referrerPolicy="no-referrer"
+              className="size-9 rounded-full border border-border"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            aria-label="Sign out"
+            className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-background"
+          >
+            <LogOut className="size-4" />
+          </button>
+          <ThemeToggle />
+        </div>
       </header>
 
       <div className="inline-flex w-fit gap-1 rounded-full border border-border bg-card p-1">
