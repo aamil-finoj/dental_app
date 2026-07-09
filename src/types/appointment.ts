@@ -91,4 +91,6 @@ export interface Appointment {
   endTime: string; // ISO 8601
   notes?: string;
   voiceNoteUrl?: string; // base64 data URL of a recorded clinical voice note
+  patientReminderSent?: boolean;
+  specialistReminderSent?: boolean;
 }

@@ -17,12 +17,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smile Clinic",
+  title: "Clinic Assistant",
   description: "Appointments, patient histories, and reminders for the clinic.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Smile Clinic",
+    title: "Clinic Assistant",
   },
 };
 

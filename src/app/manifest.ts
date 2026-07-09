@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Smile Clinic",
-    short_name: "Smile Clinic",
+    name: "Clinic Assistant",
+    short_name: "Clinic Assistant",
     description: "Appointments, patient histories, and reminders for the clinic.",
     start_url: "/",
     display: "standalone",

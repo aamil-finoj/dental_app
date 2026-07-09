@@ -3,18 +3,25 @@
 import { useMemo } from "react";
 import { isToday } from "date-fns";
 import type { Appointment } from "@/types/appointment";
+import type { MessageTemplates } from "@/types/template";
 import { AppointmentCard } from "@/components/appointment-card";
 
 export function DailyAgenda({
   appointments,
+  templates,
+  doctorName,
   onEdit,
   onSaveNotes,
   onSaveVoiceNote,
+  onMarkReminderSent,
 }: {
   appointments: Appointment[];
+  templates: MessageTemplates;
+  doctorName: string;
   onEdit: (appointment: Appointment) => void;
   onSaveNotes: (id: string, notes: string) => void;
   onSaveVoiceNote: (id: string, dataUrl: string) => void;
+  onMarkReminderSent: (id: string, type: "patient" | "specialist") => void;
 }) {
   const todaysAppointments = useMemo(() => {
     return appointments
@@ -45,9 +52,12 @@ export function DailyAgenda({
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
+              templates={templates}
+              doctorName={doctorName}
               onEdit={onEdit}
               onSaveNotes={onSaveNotes}
               onSaveVoiceNote={onSaveVoiceNote}
+              onMarkReminderSent={onMarkReminderSent}
             />
           ))}
         </div>

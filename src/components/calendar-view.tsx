@@ -71,7 +71,7 @@ export function CalendarView({
     () =>
       appointments.map((appointment) => ({
         id: appointment.id,
-        title: `${appointment.patientName} · ${appointment.procedureType}`,
+        title: appointment.patientName,
         start: new Date(appointment.startTime),
         end: new Date(appointment.endTime),
         resource: appointment,
