@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NatureBackground } from "@/components/nature-background";
+import { RegisterServiceWorker } from "@/components/register-service-worker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Smile Clinic",
   description: "Appointments, patient histories, and reminders for the clinic.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Smile Clinic",
+  },
 };
 
 export const viewport: Viewport = {
@@ -48,6 +54,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <NatureBackground />
+          <RegisterServiceWorker />
           {children}
         </ThemeProvider>
       </body>

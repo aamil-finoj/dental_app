@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { addMinutes, format } from "date-fns";
+import { addMinutes, differenceInMinutes, format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -28,28 +28,53 @@ export function AppointmentModal({
   open,
   onOpenChange,
   initialStart,
+  editingAppointment,
   patients,
   specialists,
   onCreate,
+  onUpdate,
+  onDelete,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialStart: Date;
+  editingAppointment?: Appointment;
   patients: Patient[];
   specialists: Specialist[];
   onCreate: (appointment: Appointment) => void;
+  onUpdate?: (appointment: Appointment) => void;
+  onDelete?: (id: string) => void;
 }) {
-  const [patientName, setPatientName] = useState("");
-  const [patientPhone, setPatientPhone] = useState("");
+  const isEditing = Boolean(editingAppointment);
+
+  const [patientName, setPatientName] = useState(editingAppointment?.patientName ?? "");
+  const [patientPhone, setPatientPhone] = useState(editingAppointment?.patientPhone ?? "");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [procedureType, setProcedureType] = useState<ProcedureType>("Checkup");
-  const [specialistName, setSpecialistName] = useState("");
-  const [specialistPhone, setSpecialistPhone] = useState("");
+  const [procedureType, setProcedureType] = useState<ProcedureType>(
+    editingAppointment?.procedureType ?? "Checkup"
+  );
+  const [specialistName, setSpecialistName] = useState(
+    editingAppointment?.specialistName ?? ""
+  );
+  const [specialistPhone, setSpecialistPhone] = useState(
+    editingAppointment?.specialistPhone ?? ""
+  );
   const [showSpecialistSuggestions, setShowSpecialistSuggestions] = useState(false);
-  const [startValue, setStartValue] = useState(toDatetimeLocalValue(initialStart));
-  const [duration, setDuration] = useState(PROCEDURE_DEFAULT_DURATION.Checkup);
-  const [durationTouched, setDurationTouched] = useState(false);
-  const [notes, setNotes] = useState("");
+  const [startValue, setStartValue] = useState(
+    toDatetimeLocalValue(
+      editingAppointment ? new Date(editingAppointment.startTime) : initialStart
+    )
+  );
+  const [duration, setDuration] = useState(() =>
+    editingAppointment
+      ? differenceInMinutes(
+          new Date(editingAppointment.endTime),
+          new Date(editingAppointment.startTime)
+        )
+      : PROCEDURE_DEFAULT_DURATION.Checkup
+  );
+  const [durationTouched, setDurationTouched] = useState(isEditing);
+  const [notes, setNotes] = useState(editingAppointment?.notes ?? "");
 
   const suggestions = useMemo(() => {
     const q = patientName.trim().toLowerCase();
@@ -66,6 +91,17 @@ export function AppointmentModal({
     setPatientName(patient.name);
     setPatientPhone(patient.phone);
     setShowSuggestions(false);
+  }
+
+  function handlePatientNameChange(value: string) {
+    setPatientName(value);
+    setShowSuggestions(true);
+
+    const query = value.trim().toLowerCase();
+    const matches = patients.filter((patient) => patient.name.toLowerCase() === query);
+    if (matches.length === 1) {
+      setPatientPhone(matches[0].phone);
+    }
   }
 
   const specialistSuggestions = useMemo(() => {
@@ -85,6 +121,19 @@ export function AppointmentModal({
     setShowSpecialistSuggestions(false);
   }
 
+  function handleSpecialistNameChange(value: string) {
+    setSpecialistName(value);
+    setShowSpecialistSuggestions(true);
+
+    const query = value.trim().toLowerCase();
+    const matches = specialists.filter(
+      (specialist) => specialist.name.toLowerCase() === query
+    );
+    if (matches.length === 1) {
+      setSpecialistPhone(matches[0].phone);
+    }
+  }
+
   function handleProcedureChange(next: ProcedureType) {
     setProcedureType(next);
     if (!durationTouched) {
@@ -99,8 +148,8 @@ export function AppointmentModal({
     const start = new Date(startValue);
     const end = addMinutes(start, duration);
 
-    onCreate({
-      id: crypto.randomUUID(),
+    const appointment: Appointment = {
+      id: editingAppointment?.id ?? crypto.randomUUID(),
       patientName: patientName.trim(),
       patientPhone: patientPhone.trim(),
       procedureType,
@@ -109,8 +158,24 @@ export function AppointmentModal({
       startTime: start.toISOString(),
       endTime: end.toISOString(),
       notes: notes.trim() || undefined,
-    });
+      voiceNoteUrl: editingAppointment?.voiceNoteUrl,
+    };
 
+    if (isEditing) {
+      onUpdate?.(appointment);
+    } else {
+      onCreate(appointment);
+    }
+
+    onOpenChange(false);
+  }
+
+  function handleDelete() {
+    if (!editingAppointment) return;
+    if (!window.confirm(`Cancel the appointment with ${editingAppointment.patientName}?`)) {
+      return;
+    }
+    onDelete?.(editingAppointment.id);
     onOpenChange(false);
   }
 
@@ -118,9 +183,9 @@ export function AppointmentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Appointment</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Appointment" : "New Appointment"}</DialogTitle>
           <DialogDescription>
-            {format(initialStart, "EEEE, MMMM d · h:mm a")}
+            {format(editingAppointment ? new Date(editingAppointment.startTime) : initialStart, "EEEE, MMMM d · h:mm a")}
           </DialogDescription>
         </DialogHeader>
 
@@ -134,10 +199,7 @@ export function AppointmentModal({
               required
               autoComplete="off"
               value={patientName}
-              onChange={(e) => {
-                setPatientName(e.target.value);
-                setShowSuggestions(true);
-              }}
+              onChange={(e) => handlePatientNameChange(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
               placeholder="Jane Doe"
@@ -228,10 +290,7 @@ export function AppointmentModal({
                 id="specialistName"
                 autoComplete="off"
                 value={specialistName}
-                onChange={(e) => {
-                  setSpecialistName(e.target.value);
-                  setShowSpecialistSuggestions(true);
-                }}
+                onChange={(e) => handleSpecialistNameChange(e.target.value)}
                 onFocus={() => setShowSpecialistSuggestions(true)}
                 onBlur={() =>
                   setTimeout(() => setShowSpecialistSuggestions(false), 120)
@@ -286,8 +345,18 @@ export function AppointmentModal({
             type="submit"
             className="mt-2 w-full rounded-full bg-sky-500 py-2.5 text-sm font-medium text-white transition-transform active:scale-95"
           >
-            Save appointment
+            {isEditing ? "Save changes" : "Save appointment"}
           </button>
+
+          {isEditing && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="w-full rounded-full border border-rose-500/40 py-2.5 text-sm font-medium text-rose-500 transition-transform active:scale-95"
+            >
+              Cancel appointment
+            </button>
+          )}
         </form>
       </DialogContent>
     </Dialog>

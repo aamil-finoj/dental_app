@@ -47,9 +47,11 @@ function slotPropGetter(date: Date) {
 export function CalendarView({
   appointments,
   onSelectSlot,
+  onSelectEvent,
 }: {
   appointments: Appointment[];
   onSelectSlot: (start: Date) => void;
+  onSelectEvent: (appointment: Appointment) => void;
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const allowedViews = isDesktop ? DESKTOP_VIEWS : MOBILE_VIEWS;
@@ -92,6 +94,7 @@ export function CalendarView({
         scrollToTime={scrollToTime}
         slotPropGetter={slotPropGetter}
         onSelectSlot={(slotInfo: SlotInfo) => onSelectSlot(slotInfo.start)}
+        onSelectEvent={(event: CalendarEvent) => onSelectEvent(event.resource)}
         eventPropGetter={(event: CalendarEvent) => ({
           style: {
             backgroundColor: PROCEDURE_HEX[event.resource.procedureType],

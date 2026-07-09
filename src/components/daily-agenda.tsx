@@ -5,7 +5,17 @@ import { isToday } from "date-fns";
 import type { Appointment } from "@/types/appointment";
 import { AppointmentCard } from "@/components/appointment-card";
 
-export function DailyAgenda({ appointments }: { appointments: Appointment[] }) {
+export function DailyAgenda({
+  appointments,
+  onEdit,
+  onSaveNotes,
+  onSaveVoiceNote,
+}: {
+  appointments: Appointment[];
+  onEdit: (appointment: Appointment) => void;
+  onSaveNotes: (id: string, notes: string) => void;
+  onSaveVoiceNote: (id: string, dataUrl: string) => void;
+}) {
   const todaysAppointments = useMemo(() => {
     return appointments
       .filter((appointment) => isToday(new Date(appointment.startTime)))
@@ -32,7 +42,13 @@ export function DailyAgenda({ appointments }: { appointments: Appointment[] }) {
       ) : (
         <div className="flex flex-col gap-3">
           {todaysAppointments.map((appointment) => (
-            <AppointmentCard key={appointment.id} appointment={appointment} />
+            <AppointmentCard
+              key={appointment.id}
+              appointment={appointment}
+              onEdit={onEdit}
+              onSaveNotes={onSaveNotes}
+              onSaveVoiceNote={onSaveVoiceNote}
+            />
           ))}
         </div>
       )}

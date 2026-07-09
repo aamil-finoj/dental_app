@@ -53,6 +53,7 @@ export function AppShell() {
   const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
   const [patientModalOpen, setPatientModalOpen] = useState(false);
   const [modalStart, setModalStart] = useState(() => new Date());
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
   const patients = useMemo(
     () => derivePatients(patientRecords, appointments),
@@ -71,13 +72,36 @@ export function AppShell() {
     window.localStorage.setItem(PATIENTS_KEY, JSON.stringify(next));
   }
 
-  function openAppointmentModalAt(start: Date) {
+  function updateAppointment(id: string, patch: Partial<Appointment>) {
+    persistAppointments(
+      appointments.map((appointment) =>
+        appointment.id === id ? { ...appointment, ...patch } : appointment
+      )
+    );
+  }
+
+  function deleteAppointment(id: string) {
+    persistAppointments(appointments.filter((appointment) => appointment.id !== id));
+  }
+
+  function openCreateModalAt(start: Date) {
+    setEditingAppointment(null);
     setModalStart(start);
+    setAppointmentModalOpen(true);
+  }
+
+  function openEditModal(appointment: Appointment) {
+    setEditingAppointment(appointment);
+    setModalStart(new Date(appointment.startTime));
     setAppointmentModalOpen(true);
   }
 
   function handleCreateAppointment(appointment: Appointment) {
     persistAppointments([...appointments, appointment]);
+  }
+
+  function handleUpdateAppointment(appointment: Appointment) {
+    updateAppointment(appointment.id, appointment);
   }
 
   function handleCreatePatient(patient: PatientRecord) {
@@ -88,7 +112,7 @@ export function AppShell() {
     if (tab === "patients") {
       setPatientModalOpen(true);
     } else {
-      openAppointmentModalAt(getNextAvailableSlot(appointments));
+      openCreateModalAt(getNextAvailableSlot(appointments));
     }
   }
 
@@ -118,9 +142,20 @@ export function AppShell() {
         ))}
       </div>
 
-      {tab === "agenda" && <DailyAgenda appointments={appointments} />}
+      {tab === "agenda" && (
+        <DailyAgenda
+          appointments={appointments}
+          onEdit={openEditModal}
+          onSaveNotes={(id, notes) => updateAppointment(id, { notes: notes || undefined })}
+          onSaveVoiceNote={(id, dataUrl) => updateAppointment(id, { voiceNoteUrl: dataUrl })}
+        />
+      )}
       {tab === "calendar" && (
-        <CalendarView appointments={appointments} onSelectSlot={openAppointmentModalAt} />
+        <CalendarView
+          appointments={appointments}
+          onSelectSlot={openCreateModalAt}
+          onSelectEvent={openEditModal}
+        />
       )}
       {tab === "patients" && <PatientDirectory patients={patients} />}
 
@@ -134,13 +169,16 @@ export function AppShell() {
       </button>
 
       <AppointmentModal
-        key={modalStart.toISOString()}
+        key={editingAppointment ? `edit-${editingAppointment.id}` : `create-${modalStart.toISOString()}`}
         open={appointmentModalOpen}
         onOpenChange={setAppointmentModalOpen}
         initialStart={modalStart}
+        editingAppointment={editingAppointment ?? undefined}
         patients={patients}
         specialists={specialists}
         onCreate={handleCreateAppointment}
+        onUpdate={handleUpdateAppointment}
+        onDelete={deleteAppointment}
       />
 
       <PatientModal
